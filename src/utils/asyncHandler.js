@@ -6,3 +6,4 @@ const asyncHandler = async (fn) => {
         res.status(err.code || 500).json({ message: 'Something went wrong' });
     }
 }
+export default asyncHandler
