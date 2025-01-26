@@ -9,8 +9,12 @@ app.use(cookieParser())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.static("public"))
 app.use(express.json())
+// import routes
+import userRoutes from "./routes/user.routes.js"
 
 
+// routes declation 
+app.use("/api/v1/users", userRoutes)
 export {
     app
 }
