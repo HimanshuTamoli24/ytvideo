@@ -46,15 +46,17 @@ const userSchema = new Schema({
         type: String,
     }
 }, { timestamps: true })
-userSchema.pre("save", async function (err, req, res, next) {
-    if (!this.ismodified("password")) return next();
+// pre hooks for bcyrpt password
+userSchema.pre("save", async function (next) {
+    if (!this.isModified("password")) return next();
     this.password = await bcrypt.hash(this.password, 10)
     next();
 })
+// check password correctness  before login  or update password
 userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password)
 }
-
+// genrate accesstoken
 userSchema.methods.generateAccessToken = function () {
     return jwt.sign({
         _id: this._id,
@@ -65,6 +67,7 @@ userSchema.methods.generateAccessToken = function () {
         expiresIn: process.env.ACCESS_TOKEN_EXPIRY
     })
 }
+// genrate  refresh tokens 
 userSchema.methods.generateRefreshToken = function () {
     return jwt.sign({
         _id: this._id,

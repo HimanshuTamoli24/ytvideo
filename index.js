@@ -1,6 +1,8 @@
 import connectDB from "./src/db/connect.js";
 import dotenv from "dotenv";
 import { app } from "./src/app.js"
+
+// Load environment variables from .env file
 dotenv.config({
     path: ".env"
 })
@@ -14,4 +16,3 @@ connectDB()
         console.error("MongoDB connection error: ", err.message);
         process.exit(1);
     });
-    

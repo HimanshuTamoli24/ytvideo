@@ -20,7 +20,7 @@ const uploadCloudnary = async (localfilepath) => {
         console.log("file uploaded successfully", file.url);
         return file
     } catch (error) {
-        fs.unlink(localfilepath)//remove temporary file
+        fs.promises.unlink(localfilepath)//remove temporary file
         console.error("Error uploading to cloudinary", error)
         return null
     }

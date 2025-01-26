@@ -35,6 +35,7 @@ const videoShema = new Schema({
     }
 }, { timestamps: true })
 
+//mongodb aggretaion pipeline
 videoShema.plugin(mongooseAggregatePaginate);
 const Video = model("Video", videoShema);
 export default Video;
