@@ -1,6 +1,7 @@
 class ApiError extends Error {
+
     // Custom error class for API responses
-    constructor(message = "something went wrong", statusCode, errors = [], stack = "") {
+    constructor(statusCode, message = "something went wrong", errors = [], stack = "") {
         super(message);
         this.statusCode = statusCode;
         this.errors = errors;
@@ -17,4 +18,4 @@ class ApiError extends Error {
     }
 }
 
-export {ApiError} 
+export { ApiError } 
