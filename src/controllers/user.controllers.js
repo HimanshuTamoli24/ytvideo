@@ -4,6 +4,27 @@ import { ApiError } from "../utils/ApiError.js";
 import uploadCloudinary from "../utils/cloudinary.js";
 import { Apiresponse } from "../utils/Api.response.js";
 
+// genrate access tokens
+const genrateAccessAndRefreshToken = async (userid) => {
+    try {
+        const user = await User.findById(userid)
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+        // Generate access and refresh tokens
+        const accessToken = await user.generateAccessToken();
+        const refreshToken = await user.generateRefreshToken();
+        // Save tokens in database
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false })
+        return new Apiresponse(200, "suceessfully set tokens", { accessToken, refreshToken });
+
+    } catch (error) {
+        console.error("Failed to generate access and refresh tokens", error);
+        throw new ApiError(500, "Failed to generate access and refresh tokens");
+
+    }
+}
 const registerUser = asyncHandler(async (req, res) => {
     // Extract data from request
     const { username, fullname, email, password } = req.body;
@@ -54,5 +75,52 @@ const registerUser = asyncHandler(async (req, res) => {
     // Return success response
     return res.status(201).json(new Apiresponse(201, alreadyUser, "User created successfully"));
 });
+const loginUser = asyncHandler(async (req, res) => {
+    // Implement login logic here
+    const { password, email, username } = req.body
+    // Validate required fields
+    if (!username || !email || !password) throw new ApiError(500, "All fields are required");
+    // Check if the user exists
+    const existUser = await User.findOne({ $or: [{ username }, { email }] });
+    if (!existUser) throw new ApiError(401, "no user find with this credentials");
 
-export default registerUser;
+    // Validate password
+    const isPasswordCorrect = await existUser.isPasswordCorrect(password);
+    if (!isPasswordCorrect) throw new ApiError(401, "Invalid credentials");
+    // Return success response with JWT token
+    const { accessToken, refreshToken } = await genrateAccessAndRefreshToken(existUser._id)
+    //logger user info 
+    const loggedUser = await User.findById(existUser._id).select("-password -refreshToken")
+    if (!loggedUser) throw new ApiError(500, "Failed to find user info");
+    //cookies
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    return res
+        .cookie("AccessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(new Apiresponse(200, loggedUser, "User logged in successfully"));
+})
+const logoutUser = asyncHandler(async (req, res) => {
+    // Implement logout logic here
+    await User.findByIdAndUpdate(req.user._id, {
+        $set: { refreshToken: undefined }
+    }, {
+        new: true,
+        runValidators: true
+    })
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    return res
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(new Apiresponse(200, null, "User logged out successfully"));
+})
+
+export {
+    registerUser, existUser,
+    loginUser, logoutUser,
+}
