@@ -130,7 +130,7 @@ const logoutUser = asyncHandler(async (req, res) => {
         { $unset: { refreshToken: "" } },
         { new: true, runValidators: true });
 
-  
+
 
     return res
         .clearCookie("accessToken", options)
