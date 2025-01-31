@@ -10,7 +10,9 @@ import {
     updateUserAvatar,
     updateUserCoverImage,
     deleteUser,
-    deleteAllUser
+    deleteAllUser,
+    getUserChannelProfile,
+    getUserWatchHistory
 } from '../controllers/user.controllers.js';
 import { upload } from '../middlewares/multer.middleware.js';
 import { verifyJwt } from '../middlewares/auth.middleware.js';
@@ -27,16 +29,16 @@ router.route("/register").post(
 )
 
 router.route("/login").post(loginUser)
-
 // Secured routes
 router.route("/logout").post(verifyJwt, logoutUser)
 router.route("/refresh-token").post(accessRefreshToken)
 router.route("/change-password").post(verifyJwt, changeCurrentPassword)
 router.route("/current-user").get(verifyJwt, getCurrentUser)
-router.route("/update-account-details").put(verifyJwt, updateAccountDetails)
-router.route("/update-avatar").put(verifyJwt, upload.single("avatar"), updateUserAvatar)
-router.route("/update-cover-image").put(verifyJwt, upload.single("coverImage"), updateUserCoverImage)
+router.route("/update-account-details").patch(verifyJwt, updateAccountDetails)
+router.route("/update-avatar").patch(verifyJwt, upload.single("avatar"), updateUserAvatar)
+router.route("/update-cover-image").patch(verifyJwt, upload.single("coverImage"), updateUserCoverImage)
 router.route("/delete-user").delete(verifyJwt, deleteUser)
 router.route("/delete-Alluser").delete(verifyJwt, deleteAllUser)
-
+router.route("/c/:username").get(verifyJwt, getUserChannelProfile)
+router.route("/history").get(verifyJwt, getUserWatchHistory)
 export default router

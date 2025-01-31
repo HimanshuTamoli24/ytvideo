@@ -8,6 +8,7 @@ import {
 } from "../utils/cloudinary.js";
 import { Apiresponse } from "../utils/Api.response.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 // options for cookie
 const options = {
@@ -45,10 +46,11 @@ const generateAccessAndRefreshToken = async (userid) => {
         );
     }
 };
+
 // delete Cloudinary user files
 const deleteCloudinaryUserFiles = async (id) => {
     try {
-        const { avatar, coverImage } = await User.findById(id)
+        const { avatar, coverImage } = await User.findById(id);
         if (!avatar || !coverImage) {
             return new ApiError(200, "User avatar or coverImage does not exist");
         }
@@ -56,42 +58,43 @@ const deleteCloudinaryUserFiles = async (id) => {
         const coverImagePublicId = coverImage.split("/").pop().split(".")[0];
         await deleteCloudinaryFile(avatarPublicId);
         await deleteCloudinaryFile(coverImagePublicId);
-        return
+        return;
     } catch (error) {
         console.error("Error deleting Cloudinary user files:", error);
         throw new ApiError(
             500,
             "An unexpected error occurred while deleting user files from Cloudinary."
         );
-
     }
-}
+};
+
 // delete All CloudinaryFiles
 const deleteAllCloudinaryUserFiles = async () => {
     try {
-        const users = await User.find({})
+        const users = await User.find({});
         //url array
-        const userImageUrls = []
-        users.forEach(user => {
-            userImageUrls.push(user.avatar)
-            userImageUrls.push(user.coverImage)
+        const userImageUrls = [];
+        users.forEach((user) => {
+            userImageUrls.push(user.avatar);
+            userImageUrls.push(user.coverImage);
         });
-        const publicIds = userImageUrls.map(url => {
-            // Match the public ID part of the Cloudinary URL using a regular expression
-            const matches = url.match(/\/([^/]+\/[^/]+)\./);  // This captures everything before the file extension
-            return matches ? matches[1] : null;  // Return the public ID (without the file extension)
-        }).filter(id => id);
+        const publicIds = userImageUrls
+            .map((url) => {
+                // Match the public ID part of the Cloudinary URL using a regular expression
+                const matches = url.match(/\/([^/]+\/[^/]+)\./); // This captures everything before the file extension
+                return matches ? matches[1] : null; // Return the public ID (without the file extension)
+            })
+            .filter((id) => id);
         console.log(publicIds);
-        await deleteAllCloudinaryFiles(publicIds)
+        await deleteAllCloudinaryFiles(publicIds);
     } catch (error) {
         console.error("Error deleting all Cloudinary files:", error);
         throw new ApiError(
             500,
             "An unexpected error occurred while deleting all user files from Cloudinary."
         );
-
     }
-}
+};
 
 // Register new user
 const registerUser = asyncHandler(async (req, res) => {
@@ -363,26 +366,144 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         new Apiresponse(200, user, "User cover image updated successfully!")
     );
 });
+
+// Delete user account
 const deleteUser = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) {
         return res.status(404).json(new Apiresponse(404, null, "User not found"));
     }
-    await deleteCloudinaryUserFiles(user._id)
-    await User.findByIdAndDelete(user._id)
+    await deleteCloudinaryUserFiles(user._id);
+    await User.findByIdAndDelete(user._id);
     return res.json(
         new Apiresponse(200, user.username, "User deleted successfully!")
-    )
-})
+    );
+});
 
+//only for cleanup db of user and cloudinary - admin things
 const deleteAllUser = asyncHandler(async (req, res) => {
     // Delete cloudinary user files
-    await deleteAllCloudinaryUserFiles()
+    await deleteAllCloudinaryUserFiles();
 
     // Delete all users from the database
     await User.deleteMany({});
-    return res.json(new Apiresponse(200, null, "All users deleted successfully!"));
-})
+    return res.json(
+        new Apiresponse(200, null, "All users deleted successfully!")
+    );
+});
+
+// get user Profile 
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+    const { username } = req.params;
+    if (!username?.trim()) throw new ApiError(404, "Profile link is invalid!");
+
+    const channel = await User.aggregate([
+        // simple fn like find in mongodb
+        {
+            $match: { username: username.trim() }
+        },
+        // find subscriber and join them
+        {
+            $lookup: {
+                from: 'subcriptions',
+                localField: '_id',
+                foreignField: 'channel',
+                as: 'subscribers'
+            }
+        },
+        // find subscriber and join them
+        {
+            $lookup: {
+                from: 'subcriptions',
+                localField: '_id',
+                foreignField: 'subscriber',
+                as: 'subscribedTo'
+            }
+        },
+        // Count Subscribers & Check Subscription Status
+        {
+            $addFields: {
+                subscribersCount: { $size: "$subscribers" },
+                subscribedToCount: { $size: "$subscribedTo" },
+                isSubscribed: {
+                    $in: [
+                        req.user?._id,
+                        { $map: { input: "$subscribedTo", as: "s", in: "$$s.subscriber" } }
+                    ]
+                }
+            }
+        },
+        // Select only required fields
+        {
+            $project: {
+                fullname: 1,
+                username: 1,
+                subscribersCount: 1,
+                subscribedToCount: 1,
+                email: 1,
+                avatar: 1,
+                coverImage: 1,
+                isSubscribed: 1,
+                createdAt: 1,
+                updatedAt: 1
+            }
+        }
+    ]);
+
+    if (!channel.length) throw new ApiError(404, "Channel not found!");
+
+    return res.status(200).json(
+        new Apiresponse(200, channel[0], "User profile retrieved successfully!")
+    );
+});
+
+
+// get user watchHistory
+const getUserWatchHistory = asyncHandler(async (req, res) => {
+    const user = await User.aggregate([
+        {
+            $match: { _id: new mongoose.Types.ObjectId(req.user?._id) }
+        },
+        {
+            $lookup: {
+                from: 'videos',
+                localField: 'watchHistory',
+                foreignField: '_ids',
+                as: 'watchHistory',
+                pipeline: [{
+                    $lookup: {
+                        from: 'users',
+                        localField: 'owner',
+                        foreignField: '_id',
+                        as: 'owner',
+                        pipeline: [{
+                            $project: {
+                                fullname: 1,
+                                username: 1,
+                                avatar: 1,
+                                createdAt: 1
+                            }
+                        }]
+                    }
+                },
+                {
+                    $addFields: {}
+                }]
+            }
+        },
+        {
+            $addFields: {
+                owner: {
+                    $arrayElemAt: ["$owner", 0]  // Fix: Use $arrayElemAt instead of $First
+                }
+            }
+        }])
+    if (!user.length) throw new ApiError(404, "User not found!");
+    return res.status(200).json(
+        new Apiresponse(200, user[0].watchHistory, "User watch history retrieved successfully!")
+    );
+});
+
 
 export {
     registerUser,
@@ -396,4 +517,7 @@ export {
     updateUserCoverImage,
     deleteUser,
     deleteAllUser,
+    getUserChannelProfile,
+    getUserWatchHistory,
+
 };

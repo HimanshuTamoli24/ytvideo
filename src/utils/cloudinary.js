@@ -64,7 +64,7 @@ const deleteAllCloudinaryFiles = async (filepaths) => {
         const filedeleted = await cloudinary.api.delete_resources(filepaths);
         console.log("All files deleted successfully", filedeleted);
         // used for deleteing entire folder
-        
+
         // const folderName = 'ytbackend'; // Replace with your folder name
         // cloudinary.api.delete_resources_by_prefix(folderName, function (error, result) {
         //     if (error) {
