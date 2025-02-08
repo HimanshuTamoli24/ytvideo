@@ -9,12 +9,11 @@ class ApiError extends Error {
         this.success = false;
         this.stack = stack;
         // Set stack trace if provided
-        if (stack) {
-            this.stack = stack
-        } else {
-            Error.captureStackTrace(this, this.constructor);
-
-        }
+        // if (stack) {
+        //     this.stack = stack
+        // } else {
+        //     Error.captureStackTrace(this, this.constructor);
+        // }
     }
 }
 

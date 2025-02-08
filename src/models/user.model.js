@@ -46,6 +46,7 @@ const userSchema = new Schema({
         type: String,
     }
 }, { timestamps: true })
+
 // pre hooks for bcyrpt password
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();

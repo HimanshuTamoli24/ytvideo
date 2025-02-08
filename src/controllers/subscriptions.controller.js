@@ -146,7 +146,6 @@ const getUserFollowing = asyncHandler(async (req, res) => {
             }
         }
     ])
-    console.log("following", following)
     // Check if any following users were found
     if (following.length === 0) {
         return res.status(404).json(new Apiresponse(404, null, `No following users found for ID: ${channelId}`));

@@ -9,6 +9,7 @@ import {
 import { Apiresponse } from "../utils/Api.response.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import Subscription from "../models/subscription.model.js";
 
 // options for cookie
 const options = {
@@ -405,7 +406,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         // find subscriber and join them
         {
             $lookup: {
-                from: 'subcriptions',
+                from: 'subscriptions',
                 localField: '_id',
                 foreignField: 'channel',
                 as: 'subscribers'
@@ -414,7 +415,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         // find subscriber and join them
         {
             $lookup: {
-                from: 'subcriptions',
+                from: 'subscriptions',
                 localField: '_id',
                 foreignField: 'subscriber',
                 as: 'subscribedTo'
@@ -423,8 +424,8 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         // Count Subscribers & Check Subscription Status
         {
             $addFields: {
-                subscribersCount: { $size: "$subscribers" },
-                subscribedToCount: { $size: "$subscribedTo" },
+                subscribersCount: { $size: { $setUnion: ["$subscribers._id"] } }, // Remove duplicates
+                subscribedToCount: { $size: { $setUnion: ["$subscribedTo._id"] } }, // Remove duplicates
                 isSubscribed: {
                     $in: [
                         req.user?._id,
@@ -449,8 +450,9 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
             }
         }
     ]);
-
+    
     if (!channel.length) throw new ApiError(404, "Channel not found!");
+
 
     return res.status(200).json(
         new Apiresponse(200, channel[0], "User profile retrieved successfully!")
