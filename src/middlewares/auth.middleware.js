@@ -5,7 +5,7 @@ import { ApiError } from "../utils/ApiError.js";
 
 export const verifyJwt = asyncHandler(async (req, _, next) => {
     try {
-        const token = req.cookies.accessToken
+        const token = req.cookies?.accessToken
         if (!token) {
             throw new ApiError(401, "Authentication token is missing");
         }
