@@ -7,6 +7,20 @@ import { deleteCloudinaryFile, uploadCloudinary, uploadVideoOnCloudinary, delete
 
 
 // will work after sometime
+// const getAllVideos = asyncHandler(async (req, res) => {
+//     const { page = 1, limit = 5, query, sortBy, sortType, userId } = req.query
+//     //TODO: get all videos based on query, sort, pagination
+//     // pagination
+//     let firstPages = Number(page)
+//     let limitpages = Number(limit)
+//     let skip = Number((firstPages - 1) * limit)
+//     const allVideos = await Video.find({}).skip(skip).limit(limitpages)
+//     // const pagination = allVideos
+
+//     console.log("allVideos", allVideos)
+
+//     res.status(200).json(new Apiresponse(200, allVideos, "all videos fetched successfully"))
+// })
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 5, query, sortBy, sortType, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
@@ -14,11 +28,32 @@ const getAllVideos = asyncHandler(async (req, res) => {
     let firstPages = Number(page)
     let limitpages = Number(limit)
     let skip = Number((firstPages - 1) * limit)
-    const allVideos = await Video.find({}).skip(skip).limit(limitpages)
-    // const pagination = allVideos
-
-    console.log("allVideos", allVideos)
-
+    const allVideos = await Video.aggregate([
+        { $match: {} },
+        {
+            $lookup: {
+                from: "users",
+                foreignField: "_id",
+                localField: "owner",
+                as: "allOwnerVideos"
+            }
+        }, {
+            $project: {
+                videoFile: 1,
+                thumbnail: 1,
+                title: 1,
+                description: 1,
+                duration: 1,
+                views: 1,
+                createdAt: 1,
+                owner: 1,
+                comments: 1,
+                owner: {
+                    $arrayElemAt: ["$allOwnerVideos", 0]
+                }
+            }
+        }
+    ]).limit(limitpages).skip(skip)
     res.status(200).json(new Apiresponse(200, allVideos, "all videos fetched successfully"))
 })
 
@@ -61,7 +96,8 @@ const getVideoById = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid video Id format");
     }
 
-    const video = await Video.findById(videoId);
+    const video = await Video.findById(videoId).populate("owner", "name email");
+
 
     if (!video) {
         throw new ApiError(404, "No video found with the provided videoId");
@@ -109,6 +145,9 @@ const updateVideo = asyncHandler(async (req, res) => {
         },
         { new: true }
     );
+    if (!updatedVideo) {
+        throw new ApiError(500, "Failed to update video details. Please try again.");
+    }
 
     res.status(200).json(new Apiresponse(200, updatedVideo, "Video details updated successfully"));
 });
