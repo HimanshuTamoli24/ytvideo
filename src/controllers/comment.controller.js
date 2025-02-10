@@ -17,11 +17,37 @@ const getVideoComments = asyncHandler(async (req, res) => {
     const limitpage = Number(limit);
     const startIndex = (firstPage - 1) * limitpage;
 
-    const getComments = await Comment.find({ video: videoId })
-        .skip(startIndex)
-        .limit(limitpage)
-        .sort({ createdAt: -1 }) // Sort by newest comments first
-        .populate("owner", "username profilePicture"); // Populate user details
+    // const getComments = await Comment.find({ video: videoId })
+    //     .skip(startIndex)
+    //     .limit(limitpage)
+    //     .sort({ createdAt: -1 }) // Sort by newest comments first
+    //     .populate("owner", "username profilePicture"); // Populate user details
+    const getComments = await Comment.aggregate([
+        {
+            $match: {
+                video: new mongoose.Types.ObjectId(videoId)
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "OwnerOfComment",
+            },
+        },
+        {
+            $project: {
+                _id: 0,
+                comment: "$content",
+                createdAt: 1,
+                owner: {
+                    $arrayElemAt: ["$OwnerOfComment", 0]
+                },
+            },
+        }
+    ])
+
 
     if (!getComments || getComments.length === 0) {
         throw new ApiError(404, "No comments found for this video");
