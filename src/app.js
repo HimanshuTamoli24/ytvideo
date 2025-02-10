@@ -19,6 +19,8 @@ import videoRoutes from "./routes/video.routes.js"
 import likeRouter from "./routes/like.routes.js"
 import tweetRoutes from "./routes/tweet.routes.js"
 import commentRouter from "./routes/comments.routes.js"
+
+import healthRouter from "./routes/healthcheck.routes.js"
 // routes declation 
 app.use("/api/v1/users", userRoutes)
 
@@ -27,6 +29,7 @@ app.use("/api/v1/videos", videoRoutes)
 app.use("/api/v1/tweet", tweetRoutes)
 app.use("/api/v1/comment", commentRouter)
 app.use("/api/v1/likes", likeRouter)
+app.use("/api/v1/healthcheck", healthRouter)
 
 export {
     app
