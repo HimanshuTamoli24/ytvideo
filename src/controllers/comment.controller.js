@@ -45,7 +45,10 @@ const getVideoComments = asyncHandler(async (req, res) => {
                     $arrayElemAt: ["$OwnerOfComment", 0]
                 },
             },
-        }
+        },
+        { $sort: { createdAt: -1 } },
+        { $skip: startIndex },
+        { $limit: limitpage }
     ])
 
 
