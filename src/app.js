@@ -15,6 +15,8 @@ app.use(express.json())
 import userRoutes from "./routes/user.routes.js"
 import SubscriptionRoutes from "./routes/subscriptions.routes.js"
 import videoRoutes from "./routes/video.routes.js"
+
+import likeRouter from "./routes/like.routes.js"
 import tweetRoutes from "./routes/tweet.routes.js"
 import commentRouter from "./routes/comments.routes.js"
 // routes declation 
@@ -24,6 +26,8 @@ app.use("/api/v1/subscriptions", SubscriptionRoutes)
 app.use("/api/v1/videos", videoRoutes)
 app.use("/api/v1/tweet", tweetRoutes)
 app.use("/api/v1/comment", commentRouter)
+app.use("/api/v1/likes", likeRouter)
+
 export {
     app
 }
