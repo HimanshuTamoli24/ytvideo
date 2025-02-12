@@ -79,7 +79,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
         thumbnail: thumbnailUpload.url,
         title,
         description,
-        user: req.user._id,
+        owner: req.user._id,
     });
 
     res.status(201).json(new Apiresponse(201, "Video published successfully", videoPost));
