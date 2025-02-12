@@ -21,6 +21,7 @@ import tweetRoutes from "./routes/tweet.routes.js"
 import commentRouter from "./routes/comments.routes.js"
 import playlistRouter from "./routes/playlist.routes.js"
 import healthRouter from "./routes/healthcheck.routes.js"
+import dashboardRouter from "./routes/dashboard.routes.js"
 // routes declation 
 app.use("/api/v1/users", userRoutes)
 
@@ -31,6 +32,7 @@ app.use("/api/v1/comment", commentRouter)
 app.use("/api/v1/likes", likeRouter)
 app.use("/api/v1/healthcheck", healthRouter)
 app.use("/api/v1/playlist", playlistRouter)
+app.use("/api/v1/dashboard", dashboardRouter)
 
 export {
     app
