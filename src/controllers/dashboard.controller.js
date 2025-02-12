@@ -26,11 +26,6 @@ const getChannelStats = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Something went wrong while fetching total subscribers");
 
     console.log("Total Subscribers:", totalSubscriber);
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> 495fcace7ff23f37a2c7f099fcbd95ac8757551b
     const userVideos = await Video.find({ owner: userId });
     console.log("User Videos:", userVideos);
 
@@ -66,16 +61,15 @@ const getChannelStats = asyncHandler(async (req, res) => {
 
 const getChannelVideos = asyncHandler(async (req, res) => {
     // TODO: Get all the videos uploaded by the channel
-<<<<<<< HEAD
     const channelAllVideo = await Video.aggregate([
         {
             $match: {
-                owner: req.user._id  
+                owner: req.user._id
             }
         },
         {
             $sort: {
-                createdAt: -1  
+                createdAt: -1
             }
         }
     ]);
@@ -86,8 +80,6 @@ const getChannelVideos = asyncHandler(async (req, res) => {
         message: "Fetched all videos successfully."
     });
 
-=======
->>>>>>> 495fcace7ff23f37a2c7f099fcbd95ac8757551b
 })
 
 export {
