@@ -91,7 +91,7 @@ const uploadVideoOnCloudinary = async (localpath) => {
             resource_type: "video",
             folder: "ytbackend"
         })
-        console.log("videofile upload successfully", file.secure_url,"---", file.public_id)
+        console.log("videofile upload successfully", file.secure_url, "---", file.public_id)
         await fs.promises.unlink(localpath); // Remove temporary file on error
         return file.secure_url;
     } catch (error) {
@@ -121,6 +121,7 @@ const deleteVideoOnCloudinary = async (publicId) => {
 };
 
 
-export { uploadCloudinary, deleteCloudinaryFile, deleteAllCloudinaryFiles, uploadVideoOnCloudinary,
+export {
+    uploadCloudinary, deleteCloudinaryFile, deleteAllCloudinaryFiles, uploadVideoOnCloudinary,
     deleteVideoOnCloudinary
- };
+};

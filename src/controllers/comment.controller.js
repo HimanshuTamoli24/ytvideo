@@ -13,9 +13,9 @@ const getVideoComments = asyncHandler(async (req, res) => {
     if (!isValidObjectId(videoId) || !videoId.toString()) {
         throw new ApiError(400, "Invalid video ID");
     }
-    const firstPage = Number(page);
-    const limitpage = Number(limit);
-    const startIndex = (firstPage - 1) * limitpage;
+    // const firstPage = Number(page);
+    // const limitpage = Number(limit);
+    // const startIndex = (firstPage - 1) * limitpage;
 
     // const getComments = await Comment.find({ video: videoId })
     //     .skip(startIndex)
@@ -77,6 +77,10 @@ const addComment = asyncHandler(async (req, res) => {
     }
 
     if (!comment) throw new ApiError(400, "Comment content is required");
+
+    if (!req.user) {
+        throw new ApiError(401, "User needs to be logged in");
+    }
 
     const newComment = await Comment.create({
         video: videoId,

@@ -1,4 +1,4 @@
-import mongoose, { isValidObjectId } from "mongoose"
+import  { isValidObjectId } from "mongoose"
 import { Like } from "../models/like.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { Apiresponse } from "../utils/Api.response.js"
@@ -22,10 +22,6 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
         likedBy: req.user._id
     })
     res.status(200).json(new Apiresponse(200, likevideo, "Like added successfully"))
-
-
-
-
 })
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
@@ -76,7 +72,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
         {
             $match: {
                 likedBy: req.user._id,
-                video: { $exists: true } // Ensure it's a video
+                video: { $exists: true }
             }
         },
         {
@@ -88,7 +84,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
             }
         },
         {
-            $unwind: "$videoDetails" 
+            $unwind: "$videoDetails"
         },
         {
             $project: {
@@ -103,7 +99,6 @@ const getLikedVideos = asyncHandler(async (req, res) => {
 
     res.status(200).json(new Apiresponse(200, likedVideos, "Liked videos fetched successfully"));
 });
-
 
 export {
     toggleCommentLike,

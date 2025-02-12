@@ -6,30 +6,16 @@ import asyncHandler from "../utils/asyncHandler.js"
 import { deleteCloudinaryFile, uploadCloudinary, uploadVideoOnCloudinary, deleteVideoOnCloudinary } from "../utils/cloudinary.js"
 
 
-// will work after sometime
-// const getAllVideos = asyncHandler(async (req, res) => {
-//     const { page = 1, limit = 5, query, sortBy, sortType, userId } = req.query
-//     //TODO: get all videos based on query, sort, pagination
-//     // pagination
-//     let firstPages = Number(page)
-//     let limitpages = Number(limit)
-//     let skip = Number((firstPages - 1) * limit)
-//     const allVideos = await Video.find({}).skip(skip).limit(limitpages)
-//     // const pagination = allVideos
-
-//     console.log("allVideos", allVideos)
-
-//     res.status(200).json(new Apiresponse(200, allVideos, "all videos fetched successfully"))
-// })
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 5, query, sortBy, sortType, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
     // pagination
-    let firstPages = Number(page)
-    let limitpages = Number(limit)
-    let skip = Number((firstPages - 1) * limit)
+    const match = {
+        ...(query ? { title: { $regex: query, $options: "i" } } : {}),
+        ...(userId ? { owner: new mongoose.Types.ObjectId(userId) } : {}),
+    }
     const allVideos = await Video.aggregate([
-        { $match: {} },
+        { $match: match },
         {
             $lookup: {
                 from: "users",
@@ -37,7 +23,8 @@ const getAllVideos = asyncHandler(async (req, res) => {
                 localField: "owner",
                 as: "allOwnerVideos"
             }
-        }, {
+        },
+        {
             $project: {
                 videoFile: 1,
                 thumbnail: 1,
@@ -52,8 +39,19 @@ const getAllVideos = asyncHandler(async (req, res) => {
                     $arrayElemAt: ["$allOwnerVideos", 0]
                 }
             }
+        },
+        {
+            $sort: {
+                [sortBy]: sortType === "desc" ? -1 : 1,
+            },
+        },
+        {
+            $skip: (page - 1) * parseInt(limit),
+        },
+        {
+            $limit: parseInt(limit),
         }
-    ]).limit(limitpages).skip(skip)
+    ])
     res.status(200).json(new Apiresponse(200, allVideos, "all videos fetched successfully"))
 })
 
@@ -81,6 +79,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
         description,
         owner: req.user._id,
     });
+    if (!videoPost) throw new ApiError(400, "Failed to upload video. Please try again")
 
     res.status(201).json(new Apiresponse(201, "Video published successfully", videoPost));
 });
@@ -124,7 +123,8 @@ const updateVideo = asyncHandler(async (req, res) => {
 
     if (req.file) {
         // Upload new thumbnail to Cloudinary
-        updatedThumbnailUrl = await uploadCloudinary(req.file?.path);
+        const uploadedThumbnail = await uploadCloudinary(req.file?.path);
+        updatedThumbnailUrl = uploadedThumbnail.secure_url;
 
         // Delete old thumbnail from Cloudinary
         if (videoDetails.thumbnail) {
@@ -140,10 +140,14 @@ const updateVideo = asyncHandler(async (req, res) => {
             $set: {
                 title,
                 description,
-                thumbnail: updatedThumbnailUrl, // Save new thumbnail URL if updated
+                thumbnail: updatedThumbnailUrl,
+
             },
         },
-        { new: true }
+        {
+            new: true,
+            // runValidators: true
+        }
     );
     if (!updatedVideo) {
         throw new ApiError(500, "Failed to update video details. Please try again.");
@@ -181,12 +185,20 @@ const deleteVideo = asyncHandler(async (req, res) => {
 const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
 
+    if (!videoId) {
+        return res.status(400).json({ message: "Video ID is required" });
+    }
+    if (!isValidObjectId(videoId)) {
+        return res.status(400).json({ message: "Invalid video ID format" });
+    }
     // Find the video by ID
     const video = await Video.findById(videoId);
 
     if (!video) {
         return res.status(404).json({ message: "Video not found" });
     }
+
+
 
     // Toggle the isActive status
     video.isPublished = !video.isPublished;

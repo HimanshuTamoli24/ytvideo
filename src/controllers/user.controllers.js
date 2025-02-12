@@ -9,7 +9,6 @@ import {
 import { Apiresponse } from "../utils/Api.response.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-import Subscription from "../models/subscription.model.js";
 
 // options for cookie
 const options = {
@@ -450,7 +449,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
             }
         }
     ]);
-    
+
     if (!channel.length) throw new ApiError(404, "Channel not found!");
 
 
